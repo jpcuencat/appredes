@@ -1,21 +1,44 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Crear directorios necesarios
+const dirs = ['uploads', 'temp', 'output'];
+dirs.forEach(dir => {
+  const dirPath = path.join(__dirname, dir);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+});
+
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Servir archivos estáticos (videos generados)
+app.use('/output', express.static(path.join(__dirname, 'output')));
+
+// Importar rutas
+const scriptsRoutes = require('./routes/scripts');
+const videosRoutes = require('./routes/videos');
 
 // Rutas básicas
 app.get('/', (req, res) => {
   res.json({
-    message: 'API Backend con Node.js y Express',
+    message: 'API para Generación de Videos Cortos',
     status: 'OK',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      scripts: '/api/scripts',
+      videos: '/api/videos',
+      health: '/api/health'
+    }
   });
 });
 
@@ -27,16 +50,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Ruta de ejemplo para datos
-app.get('/api/data', (req, res) => {
-  res.json({
-    data: [
-      { id: 1, name: 'Elemento 1', description: 'Descripción del elemento 1' },
-      { id: 2, name: 'Elemento 2', description: 'Descripción del elemento 2' },
-      { id: 3, name: 'Elemento 3', description: 'Descripción del elemento 3' }
-    ]
-  });
-});
+// Rutas de la API
+app.use('/api/scripts', scriptsRoutes);
+app.use('/api/videos', videosRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
@@ -57,4 +73,5 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`📁 Directorio de salida: ${path.join(__dirname, 'output')}`);
 });
