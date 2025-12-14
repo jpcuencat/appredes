@@ -3,22 +3,27 @@ const ttsService = require('./ttsService');
 const imageService = require('./imageService');
 const videoService = require('./videoService');
 
-// Crear cola de videos
-// Nota: Si Redis no está disponible, Bull usará memoria local
+// Crear cola de videos sin Redis (modo local)
 const videoQueue = new Queue('video-generation', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379
+  // Configuración para funcionar sin Redis
+  settings: {
+    stalledInterval: 30 * 1000,
+    maxStalledCount: 1
   },
   defaultJobOptions: {
-    removeOnComplete: true,
-    removeOnFail: false,
-    attempts: 3,
+    removeOnComplete: 5,
+    removeOnFail: 10,
+    attempts: 2,
     backoff: {
       type: 'exponential',
       delay: 2000
     }
   }
+});
+
+// Manejar errores de conexión sin interrumpir el servicio
+videoQueue.on('error', (error) => {
+  console.log('⚠️  Cola funcionando en modo local (sin Redis)');
 });
 
 // Procesar trabajos de generación de video

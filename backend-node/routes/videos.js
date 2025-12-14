@@ -2,11 +2,86 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const videoQueue = require('../services/videoQueue');
+const ttsService = require('../services/ttsService');
+const imageService = require('../services/imageService');
+const videoService = require('../services/videoService');
 const fs = require('fs').promises;
 const path = require('path');
 
 // Almacenamiento en memoria para trabajos de video
 let videoJobs = [];
+
+// Función para procesar video directamente sin cola
+async function processVideoDirectly(jobId, script, settings) {
+  console.log(`\n🎬 Iniciando generación de video - Job ID: ${jobId}`);
+  
+  // Actualizar estado
+  const updateJob = (updates) => {
+    const jobIndex = videoJobs.findIndex(j => j.id === jobId);
+    if (jobIndex !== -1) {
+      videoJobs[jobIndex] = { ...videoJobs[jobIndex], ...updates, updatedAt: new Date().toISOString() };
+    }
+  };
+
+  try {
+    updateJob({ status: 'processing', progress: 10 });
+
+    // Paso 1: Generar audios
+    console.log('\n🎤 Generando audios...');
+    const audioFiles = await ttsService.generateSceneAudios(script, settings.voice || 'es');
+    updateJob({ progress: 33 });
+
+    // Paso 2: Generar imágenes
+    console.log(`\n🖼️  Generando ${script.length} imágenes...`);
+    console.log('📝 Configuración de imágenes:', {
+      width: settings.videoWidth || 1080,
+      height: settings.videoHeight || 1920,
+      style: settings.imageStyle || 'digital art'
+    });
+    
+    let imageFiles;
+    try {
+      imageFiles = await imageService.generateSceneImages(script, {
+        width: settings.videoWidth || 1080,
+        height: settings.videoHeight || 1920,
+        style: settings.imageStyle || 'digital art'
+      });
+      console.log(`✅ ${imageFiles.length} imágenes generadas exitosamente`);
+      updateJob({ progress: 66 });
+    } catch (imageError) {
+      console.error('❌ Error generando imágenes:', imageError);
+      console.error('❌ Stack trace:', imageError.stack);
+      throw new Error(`Fallo en generación de imágenes: ${imageError.message}`);
+    }
+
+    // Paso 3: Componer video
+    console.log('\n🎞️  Componiendo video...');
+    const videoResult = await videoService.generateVideo(script, audioFiles, imageFiles, {
+      width: settings.videoWidth || 1080,
+      height: settings.videoHeight || 1920,
+      fps: settings.fps || 30
+    });
+    updateJob({ progress: 90 });
+
+    // Limpieza
+    console.log('\n🧹 Limpiando archivos temporales...');
+    await ttsService.cleanupAudioFiles(audioFiles.map(a => a.audioPath));
+    await imageService.cleanupImageFiles(imageFiles.map(i => i.imagePath));
+
+    updateJob({ 
+      status: 'completed', 
+      progress: 100, 
+      videoUrl: videoResult.videoUrl,
+      videoPath: videoResult.videoPath 
+    });
+
+    console.log(`\n✅ Video completado: ${videoResult.videoName}`);
+
+  } catch (error) {
+    console.error('\n❌ Error:', error);
+    updateJob({ status: 'failed', error: error.message });
+  }
+}
 
 // POST - Generar video desde un guion
 router.post('/generate', async (req, res) => {
@@ -42,11 +117,11 @@ router.post('/generate', async (req, res) => {
 
     videoJobs.push(videoJob);
 
-    // Agregar trabajo a la cola
-    const job = await videoQueue.add('generate-video', {
-      jobId,
-      script: script.scenes,
-      settings: videoJob.settings
+    // Procesar directamente sin cola
+    processVideoDirectly(jobId, script.scenes, {
+      ...videoJob.settings,
+      imageStyle: settings?.imageStyle || 'digital art',
+      generateImages: true
     });
 
     res.status(202).json({

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Save, FileText } from 'lucide-react'
+import { Plus, Trash2, Save, FileText, Sparkles } from 'lucide-react'
 import axios from 'axios'
 
 const API_URL = 'http://localhost:3000/api'
@@ -10,7 +10,12 @@ export default function ScriptEditor({ onScriptSave }) {
     { text: '', imagePrompt: '', duration: 5 }
   ])
   const [saving, setSaving] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState(null)
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiTopic, setAiTopic] = useState('')
+  const [aiStyle, setAiStyle] = useState('informativo')
+  const [aiDuration, setAiDuration] = useState(30)
 
   const addScene = () => {
     setScenes([...scenes, { text: '', imagePrompt: '', duration: 5 }])
@@ -26,6 +31,38 @@ export default function ScriptEditor({ onScriptSave }) {
     const newScenes = [...scenes]
     newScenes[index][field] = value
     setScenes(newScenes)
+  }
+
+  const handleGenerateAI = async () => {
+    if (!aiTopic.trim()) {
+      setMessage({ type: 'error', text: 'El tema es requerido' })
+      return
+    }
+
+    setGenerating(true)
+    setMessage(null)
+
+    try {
+      const response = await axios.post(`${API_URL}/scripts/generate`, {
+        topic: aiTopic,
+        style: aiStyle,
+        duration: aiDuration
+      })
+
+      const { title: generatedTitle, scenes: generatedScenes } = response.data.data
+      
+      setTitle(generatedTitle)
+      setScenes(generatedScenes)
+      setShowAiModal(false)
+      setMessage({ type: 'success', text: 'Guión generado exitosamente con IA' })
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Error generando el guión con IA'
+      })
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const handleSave = async () => {
@@ -82,14 +119,24 @@ export default function ScriptEditor({ onScriptSave }) {
         </div>
       )}
 
-      <div className="form-group">
-        <label>Título del Video</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej: Mi primer video corto"
-        />
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+        <div className="form-group" style={{ flex: 1, margin: 0 }}>
+          <label>Título del Video</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ej: Mi primer video corto"
+          />
+        </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowAiModal(true)}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          <Sparkles size={20} />
+          Generar con IA
+        </button>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -175,6 +222,88 @@ export default function ScriptEditor({ onScriptSave }) {
           {saving ? 'Guardando...' : 'Guardar y Continuar'}
         </button>
       </div>
+
+      {/* Modal de Generación con IA */}
+      {showAiModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            padding: '2rem',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '500px',
+            border: '1px solid var(--border)'
+          }}>
+            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Sparkles size={24} style={{ color: 'var(--primary)' }} />
+              Generar Guión con IA
+            </h3>
+            
+            <div className="form-group">
+              <label>Tema del Video</label>
+              <input
+                type="text"
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                placeholder="Ej: Beneficios del ejercicio, Historia del café, etc."
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Estilo de Contenido</label>
+              <select
+                value={aiStyle}
+                onChange={(e) => setAiStyle(e.target.value)}
+              >
+                <option value="informativo">Informativo</option>
+                <option value="entretenido">Entretenido</option>
+                <option value="educativo">Educativo</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Duración Aproximada (segundos)</label>
+              <select
+                value={aiDuration}
+                onChange={(e) => setAiDuration(parseInt(e.target.value))}
+              >
+                <option value={15}>15 segundos</option>
+                <option value={30}>30 segundos</option>
+                <option value={60}>60 segundos</option>
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowAiModal(false)}
+                disabled={generating}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleGenerateAI}
+                disabled={generating || !aiTopic.trim()}
+              >
+                <Sparkles size={20} />
+                {generating ? 'Generando...' : 'Generar Guión'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

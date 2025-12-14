@@ -28,6 +28,13 @@ app.use('/output', express.static(path.join(__dirname, 'output')));
 const scriptsRoutes = require('./routes/scripts');
 const videosRoutes = require('./routes/videos');
 
+// Función global para actualizar estado de trabajos de video
+global.updateVideoJobStatus = (jobId, updates) => {
+  // Esta función será utilizada por el videoQueue para actualizar estados
+  // En una implementación real, esto se haría con una base de datos o Redis
+  console.log(`🔄 Actualizando job ${jobId}:`, updates);
+};
+
 // Rutas básicas
 app.get('/', (req, res) => {
   res.json({
@@ -50,12 +57,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Middleware para log de rutas
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 // Rutas de la API
 app.use('/api/scripts', scriptsRoutes);
 app.use('/api/videos', videosRoutes);
 
 // Manejo de rutas no encontradas
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     error: 'Ruta no encontrada',
     message: `La ruta ${req.originalUrl} no existe en este servidor`

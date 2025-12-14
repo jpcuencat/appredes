@@ -18,17 +18,17 @@ class VideoService {
 
       ffmpeg()
         .input(imagePath)
-        .loop(5) // Loop de la imagen
+        .inputOptions(['-loop 1']) // Loop infinito de la imagen
         .input(audioPath)
         .outputOptions([
           '-c:v libx264',
           '-tune stillimage',
-          '-c:a aac',
-          '-b:a 192k',
+          '-c:a copy', // Copiar audio sin recodificar para mantener duración
           '-pix_fmt yuv420p',
-          '-shortest',
+          '-shortest', // El video durará lo mismo que el audio
           `-r ${fps}`,
-          `-s ${width}x${height}`
+          `-s ${width}x${height}`,
+          '-avoid_negative_ts make_zero'
         ])
         .output(outputPath)
         .on('start', (cmd) => {
@@ -108,6 +108,14 @@ class VideoService {
       const sceneVideoPath = path.join(this.tempDir, `scene_${i}_${uuidv4()}.mp4`);
 
       console.log(`\n📹 Creando video para escena ${i + 1}/${scenes.length}...`);
+      
+      // Verificar duración del audio
+      try {
+        const audioDuration = await this.getAudioDuration(audioFiles[i].audioPath);
+        console.log(`🎵 Audio de escena ${i + 1}: ${audioDuration.toFixed(2)}s`);
+      } catch (error) {
+        console.warn(`⚠️  No se pudo verificar duración del audio ${i + 1}`);
+      }
 
       await this.createSceneVideo(
         imageFiles[i].imagePath,
@@ -141,6 +149,23 @@ class VideoService {
       videoName: finalVideoName,
       videoUrl: `/output/${finalVideoName}`
     };
+  }
+
+  /**
+   * Obtiene la duración de un archivo de audio
+   */
+  getAudioDuration(audioPath) {
+    return new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(audioPath, (err, metadata) => {
+        if (err) {
+          reject(err);
+        } else {
+          const duration = metadata.format.duration;
+          console.log(`⏱️  Duración del audio: ${duration} segundos`);
+          resolve(duration);
+        }
+      });
+    });
   }
 
   /**

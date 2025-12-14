@@ -91,13 +91,19 @@ export default function VideoGenerator({ script, onVideoGenerated }) {
   }
 
   const getStatusText = () => {
+    if (progress <= 10) return 'Iniciando proceso...'
+    if (progress <= 33) return 'Generando audios con IA...'
+    if (progress <= 66) return 'Creando imágenes con IA...'
+    if (progress <= 90) return 'Componiendo video final...'
+    if (progress < 100) return 'Finalizando...'
+    
     switch (status) {
       case 'pending':
         return 'En cola...'
       case 'processing':
         return 'Procesando video...'
       case 'completed':
-        return 'Video completado'
+        return '¡Video completado con éxito!'
       case 'failed':
         return 'Error en la generación'
       default:
