@@ -1,34 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from 'react'
 import './App.css'
+import ScriptEditor from './components/ScriptEditor'
+import VideoGenerator from './components/VideoGenerator'
+import VideoList from './components/VideoList'
+import { Film, FileText, Video } from 'lucide-react'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState('editor')
+  const [currentScript, setCurrentScript] = useState(null)
+
+  const tabs = [
+    { id: 'editor', label: 'Editor de Guiones', icon: FileText },
+    { id: 'generate', label: 'Generar Video', icon: Film },
+    { id: 'videos', label: 'Mis Videos', icon: Video }
+  ]
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
+          <div className="logo">
+            <Film size={32} />
+            <h1>Creador de Videos Cortos</h1>
+          </div>
+          <p className="subtitle">Genera videos increíbles basados en tus guiones</p>
+        </div>
+      </header>
+
+      <nav className="tabs">
+        {tabs.map(tab => {
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon size={20} />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </nav>
+
+      <main className="app-main">
+        {activeTab === 'editor' && (
+          <ScriptEditor
+            onScriptSave={(script) => {
+              setCurrentScript(script)
+              setActiveTab('generate')
+            }}
+          />
+        )}
+
+        {activeTab === 'generate' && (
+          <VideoGenerator
+            script={currentScript}
+            onVideoGenerated={() => setActiveTab('videos')}
+          />
+        )}
+
+        {activeTab === 'videos' && (
+          <VideoList />
+        )}
+      </main>
+    </div>
   )
 }
 
