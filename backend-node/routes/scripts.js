@@ -46,6 +46,7 @@ router.post('/generate', async (req, res) => {
     // Si hay OpenAI configurado, usarlo
     if (openai) {
       try {
+        console.log('📝 Intentando generar guion con OpenAI...');
         const prompt = `Genera un guion para un video corto de ${duration || 30} segundos sobre "${topic}". El estilo debe ser ${style || 'informativo y entretenido'}. 
 
 Estructura el guion en 3-5 escenas cortas. Para cada escena proporciona:
@@ -74,14 +75,32 @@ Formato de respuesta JSON:
           max_tokens: 1000
         });
 
-        generatedScript = JSON.parse(response.choices[0].message.content);
+        const content = response.choices[0].message.content;
+        console.log('✅ Respuesta de OpenAI recibida');
+        
+        // Intentar parsear la respuesta JSON
+        generatedScript = JSON.parse(content);
+        
+        // Validar que la estructura sea correcta
+        if (!generatedScript.title || !Array.isArray(generatedScript.scenes)) {
+          throw new Error('Respuesta de OpenAI no tiene estructura válida');
+        }
+        
+        console.log('✅ Guion generado con éxito por OpenAI');
       } catch (aiError) {
-        console.log('Error con IA, usando generador local:', aiError.message);
+        console.error('❌ Error con OpenAI:', aiError.message);
+        console.log('⚠️  Usando generador local como fallback');
         generatedScript = generateLocalScript(topic, style, duration);
       }
     } else {
       // Generador local si no hay API key
+      console.log('ℹ️  No hay OPENAI_API_KEY configurada, usando generador local');
       generatedScript = generateLocalScript(topic, style, duration);
+    }
+
+    // Validar estructura final
+    if (!generatedScript || !generatedScript.title || !generatedScript.scenes) {
+      throw new Error('Estructura de guion inválida generada');
     }
 
     res.json({
@@ -89,9 +108,10 @@ Formato de respuesta JSON:
       data: generatedScript
     });
   } catch (error) {
+    console.error('❌ Error en ruta /generate:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message || 'Error al generar el guion'
     });
   }
 });

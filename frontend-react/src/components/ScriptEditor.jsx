@@ -43,22 +43,32 @@ export default function ScriptEditor({ onScriptSave }) {
     setMessage(null)
 
     try {
+      console.log('📝 Enviando solicitud de generación de guión con IA...')
       const response = await axios.post(`${API_URL}/scripts/generate`, {
         topic: aiTopic,
         style: aiStyle,
         duration: aiDuration
       })
 
+      console.log('✅ Respuesta recibida:', response.data)
       const { title: generatedTitle, scenes: generatedScenes } = response.data.data
+      
+      if (!generatedTitle || !Array.isArray(generatedScenes) || generatedScenes.length === 0) {
+        throw new Error('Respuesta del servidor con estructura inválida')
+      }
       
       setTitle(generatedTitle)
       setScenes(generatedScenes)
       setShowAiModal(false)
       setMessage({ type: 'success', text: 'Guión generado exitosamente con IA' })
     } catch (error) {
+      console.error('❌ Error al generar guión:', error)
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          'Error al generar el guión con IA. Por favor, intenta de nuevo.'
       setMessage({
         type: 'error',
-        text: error.response?.data?.error || 'Error generando el guión con IA'
+        text: errorMessage
       })
     } finally {
       setGenerating(false)
