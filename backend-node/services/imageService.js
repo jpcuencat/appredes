@@ -16,13 +16,13 @@ class ImageService {
   }
 
   /**
-   * Genera una imagen simple con texto (placeholder)
-   * Útil cuando no hay API de generación de imágenes disponible
+   * Genera una imagen visual abstracta (placeholder mejorado)
+   * Crea diseños visuales basados en colores y formas geométricas
    */
   async generatePlaceholderImage(text, sceneIndex, width = 1080, height = 1920) {
-    console.log(`     🖼️ Creando placeholder ${sceneIndex + 1}...`);
+    console.log(`     🖼️ Creando placeholder visual ${sceneIndex + 1}...`);
     console.log(`     📏 Canvas: ${width}x${height}`);
-    
+
     const filename = `image_${uuidv4()}.png`;
     const filepath = path.join(this.tempDir, filename);
     console.log(`     💾 Archivo destino: ${filepath}`);
@@ -32,55 +32,101 @@ class ImageService {
       const ctx = canvas.getContext('2d');
       console.log(`     🎨 Canvas creado exitosamente`);
 
-    // Fondo con degradado
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#667eea');
-    gradient.addColorStop(1, '#764ba2');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+      // Paletas de colores para diferentes escenas
+      const colorPalettes = [
+        { bg1: '#FF6B6B', bg2: '#4ECDC4', accent1: '#FFE66D', accent2: '#95E1D3' },
+        { bg1: '#667eea', bg2: '#764ba2', accent1: '#f093fb', accent2: '#4facfe' },
+        { bg1: '#FA8BFF', bg2: '#2BD2FF', accent1: '#2BFF88', accent2: '#FDBB2D' },
+        { bg1: '#4158D0', bg2: '#C850C0', accent1: '#FFCC70', accent2: '#FD1D1D' },
+        { bg1: '#0093E9', bg2: '#80D0C7', accent1: '#13547a', accent2: '#80d0c7' },
+        { bg1: '#8EC5FC', bg2: '#E0C3FC', accent1: '#f093fb', accent2: '#4facfe' },
+      ];
 
-    // Texto de la escena
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 60px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+      const palette = colorPalettes[sceneIndex % colorPalettes.length];
 
-    // Dibujar número de escena
-    ctx.font = 'bold 120px Arial';
-    ctx.fillText(`Escena ${sceneIndex + 1}`, width / 2, height / 3);
+      // Fondo con degradado diagonal
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, palette.bg1);
+      gradient.addColorStop(1, palette.bg2);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
 
-    // Dibujar texto descriptivo (con word wrap)
-    ctx.font = '40px Arial';
-    const maxWidth = width - 100;
-    const words = text.split(' ');
-    let line = '';
-    let y = height / 2;
-    const lineHeight = 50;
+      // Agregar formas geométricas decorativas
+      ctx.globalAlpha = 0.3;
 
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + ' ';
-      const metrics = ctx.measureText(testLine);
+      // Círculos decorativos
+      for (let i = 0; i < 3; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const radius = 100 + Math.random() * 200;
 
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line, width / 2, y);
-        line = words[n] + ' ';
-        y += lineHeight;
-      } else {
-        line = testLine;
+        ctx.fillStyle = i % 2 === 0 ? palette.accent1 : palette.accent2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
       }
-    }
-    ctx.fillText(line, width / 2, y);
+
+      // Rectángulos rotados
+      for (let i = 0; i < 2; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const w = 200 + Math.random() * 300;
+        const h = 200 + Math.random() * 300;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.random() * Math.PI / 4);
+        ctx.fillStyle = palette.accent1;
+        ctx.fillRect(-w/2, -h/2, w, h);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1.0;
+
+      // Capa semi-transparente para mejorar contraste del texto
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, height / 4, width, height / 2);
+
+      // Número de escena con estilo
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 80px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+
+      ctx.fillText(`ESCENA ${sceneIndex + 1}`, width / 2, height / 2 - 100);
+
+      // Línea decorativa
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(width / 2 - 150, height / 2 - 40);
+      ctx.lineTo(width / 2 + 150, height / 2 - 40);
+      ctx.stroke();
+
+      // Palabras clave del prompt (primeras 3 palabras importantes)
+      ctx.font = '36px Arial';
+      ctx.shadowBlur = 8;
+      const keywords = this.extractKeywords(text).slice(0, 3).join(' • ').toUpperCase();
+      ctx.fillText(keywords || 'ESCENA VISUAL', width / 2, height / 2 + 50);
+
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
 
       // Guardar imagen
       console.log(`     💾 Generando buffer PNG...`);
       const buffer = canvas.toBuffer('image/png');
-      
+
       console.log(`     💾 Escribiendo archivo...`);
       await fs.writeFile(filepath, buffer);
 
-      console.log(`     ✅ Imagen placeholder guardada: ${filename}`);
+      console.log(`     ✅ Imagen placeholder visual guardada: ${filename}`);
       return filepath;
-      
+
     } catch (error) {
       console.error(`     ❌ Error creando placeholder: ${error.message}`);
       throw error;
@@ -91,42 +137,61 @@ class ImageService {
    * Genera una imagen usando IA (DALL-E, Replicate, etc.)
    */
   async generateImageFromPrompt(prompt, sceneIndex, settings = {}) {
-    const { width = 1080, height = 1920, style = 'digital art' } = settings;
+    const {
+      width = 1080,
+      height = 1920,
+      style = 'digital art',
+      imageGenerationMethod = 'placeholder' // 'dalle', 'unsplash', 'placeholder'
+    } = settings;
 
     console.log(`\n🎨 [IMAGEN ${sceneIndex + 1}] Iniciando generación...`);
     console.log(`   📝 Prompt: "${prompt}"`);
     console.log(`   📏 Dimensiones: ${width}x${height}`);
     console.log(`   🎯 Estilo: ${style}`);
+    console.log(`   🔧 Método: ${imageGenerationMethod}`);
 
     try {
       // Asegurarse de que el directorio temp existe
       await fs.mkdir(this.tempDir, { recursive: true });
       console.log(`   📁 Directorio temp confirmado: ${this.tempDir}`);
-      
-      // Por ahora usar solo placeholders para evitar problemas
-      console.log('   📄 Usando generador placeholder (modo seguro)');
-      const imagePath = await this.generatePlaceholderImage(prompt, sceneIndex, width, height);
-      console.log(`   ✅ Placeholder generado: ${imagePath}`);
-      return imagePath;
 
-      // TODO: Reactivar IA cuando esté estable
-      /*
       // Mejorar el prompt para mejores resultados
       const enhancedPrompt = this.enhancePrompt(prompt, style);
 
-      // Intentar con DALL-E si está disponible
-      if (openai) {
-        return await this.generateWithDALLE(enhancedPrompt, sceneIndex);
+      // Generar según el método seleccionado
+      switch (imageGenerationMethod) {
+        case 'dalle':
+          if (openai) {
+            console.log('   🤖 Usando DALL-E para generación de imagen...');
+            return await this.generateWithDALLE(enhancedPrompt, sceneIndex);
+          } else {
+            console.log('   ⚠️  DALL-E seleccionado pero API key no configurada');
+            console.log('   🔄 Cambiando a placeholder...');
+            return await this.generatePlaceholderImage(prompt, sceneIndex, width, height);
+          }
+
+        case 'unsplash':
+          console.log('   📸 Usando Unsplash para obtener imagen...');
+          return await this.generateFromUnsplash(prompt, sceneIndex, { width, height });
+
+        case 'placeholder':
+        default:
+          console.log('   🎨 Generando placeholder visual...');
+          return await this.generatePlaceholderImage(prompt, sceneIndex, width, height);
       }
-      
-      // Fallback: intentar con servicio gratuito (Unsplash)
-      return await this.generateFromUnsplash(prompt, sceneIndex, { width, height });
-      */
-      
+
     } catch (error) {
       console.error(`   ❌ Error generando imagen: ${error.message}`);
       console.error(`   ❌ Stack: ${error.stack}`);
-      throw error;
+
+      // Fallback a placeholder en caso de error
+      console.log('   🔄 Intentando generar placeholder como respaldo...');
+      try {
+        return await this.generatePlaceholderImage(prompt, sceneIndex, width, height);
+      } catch (fallbackError) {
+        console.error(`   💥 Error en fallback: ${fallbackError.message}`);
+        throw error; // Lanzar el error original
+      }
     }
   }
 
@@ -135,14 +200,18 @@ class ImageService {
    */
   enhancePrompt(originalPrompt, style = 'digital art') {
     const stylePrompts = {
-      'digital art': 'digital art, high quality, 4k, cinematic lighting',
-      'photography': 'professional photography, sharp focus, natural lighting',
-      'illustration': 'detailed illustration, vibrant colors, artistic style',
-      'cartoon': 'cartoon style, colorful, cheerful, animated'
+      'digital art': 'high quality digital art, cinematic lighting, professional, 4k resolution',
+      'photography': 'professional photography, sharp focus, natural lighting, realistic',
+      'illustration': 'detailed illustration, vibrant colors, artistic style, beautiful composition',
+      'cartoon': 'cartoon style, colorful, cheerful, animated, fun'
     };
 
     const baseStyle = stylePrompts[style] || stylePrompts['digital art'];
-    return `${originalPrompt}, ${baseStyle}, vertical orientation, 9:16 aspect ratio`;
+
+    // Agregar instrucciones específicas para formato vertical
+    const formatInstructions = 'vertical composition, portrait orientation';
+
+    return `${originalPrompt}, ${baseStyle}, ${formatInstructions}`;
   }
 
   /**

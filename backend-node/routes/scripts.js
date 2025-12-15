@@ -47,19 +47,31 @@ router.post('/generate', async (req, res) => {
     if (openai) {
       try {
         console.log('📝 Intentando generar guion con OpenAI...');
-        const prompt = `Genera un guion para un video corto de ${duration || 30} segundos sobre "${topic}". El estilo debe ser ${style || 'informativo y entretenido'}. 
+        const prompt = `Genera un guion para un video corto tipo TikTok/YouTube Shorts de ${duration || 30} segundos sobre "${topic}". El estilo debe ser ${style || 'informativo y entretenido'}.
 
-Estructura el guion en 3-5 escenas cortas. Para cada escena proporciona:
-1. Texto de narración (máximo 20 palabras por escena)
-2. Descripción visual para generar imagen
+IMPORTANTE: Este es un video CORTO, no un documental. Los textos deben ser BREVES y DIRECTOS.
+
+Estructura el guion en 3-5 escenas MUY CORTAS. Para cada escena:
+1. Texto de narración: MÁXIMO 8-10 palabras (frases cortas y directas)
+2. Descripción visual: Detallada y específica para generar imagen con IA
+
+Ejemplos de textos CORRECTOS (cortos):
+- "Descubre el secreto de ${topic}"
+- "Esto cambiará tu vida"
+- "El dato más sorprendente"
+- "Lo que nadie te dice"
+
+Ejemplos de textos INCORRECTOS (demasiado largos):
+- "En este video vamos a explorar todos los aspectos fascinantes de..."
+- "Prepárate para descubrir información que cambiará completamente..."
 
 Formato de respuesta JSON:
 {
-  "title": "Título del video",
+  "title": "Título del video (máximo 8 palabras)",
   "scenes": [
     {
-      "text": "Texto de narración",
-      "imagePrompt": "Descripción visual detallada",
+      "text": "Texto corto y directo (8-10 palabras máximo)",
+      "imagePrompt": "Descripción visual detallada para IA",
       "duration": 5
     }
   ]
@@ -271,24 +283,24 @@ function generateLocalScript(topic, style, duration) {
   
   const sceneTemplates = [
     {
-      text: `Bienvenidos a un viaje fascinante donde exploraremos los secretos más increíbles sobre ${topic}. Prepárense para descubrir información que cambiará completamente su perspectiva y les dará una nueva comprensión del mundo.`,
-      imagePrompt: `Escena de apertura cinematográfica sobre ${topic}, con elementos visuales llamativos, colores vibrantes, composición dinámica, iluminación dramática, estilo digital art moderno`
+      text: `Descubre los secretos de ${topic}`,
+      imagePrompt: `Escena de apertura cinematográfica sobre ${topic}, colores vibrantes, composición dinámica, iluminación dramática, estilo digital art moderno`
     },
     {
-      text: `Aquí están los datos más sorprendentes y fundamentales que necesitan conocer sobre ${topic}. Esta información es crucial y les ayudará a entender por qué este tema es tan relevante en nuestro mundo actual.`,
-      imagePrompt: `Infografía visual impactante mostrando datos clave sobre ${topic}, gráficos coloridos, estadísticas visuales, diseño moderno y profesional, elementos informativos claros`
+      text: `Los datos más sorprendentes sobre ${topic}`,
+      imagePrompt: `Infografía visual impactante mostrando datos clave sobre ${topic}, gráficos coloridos, estadísticas visuales, diseño moderno`
     },
     {
-      text: `Prepárense para la revelación más impactante: el aspecto más extraordinario de ${topic} que la mayoría de las personas desconoce por completo. Esto les sorprenderá y les hará reflexionar profundamente.`,
-      imagePrompt: `Imagen misteriosa y fascinante sobre los aspectos ocultos de ${topic}, ambiente dramático, efectos visuales impactantes, colores intensos, composición artística sorprendente`
+      text: `Lo que no sabías de ${topic}`,
+      imagePrompt: `Imagen misteriosa y fascinante sobre ${topic}, ambiente dramático, efectos visuales impactantes, colores intensos`
     },
     {
-      text: `La pregunta que todos se hacen: ¿por qué ${topic} tiene un impacto tan profundo en nuestras vidas diarias? Descubran las conexiones ocultas y las razones fundamentales que explican su importancia absoluta.`,
-      imagePrompt: `Visualización conceptual del impacto de ${topic} en la vida cotidiana, conexiones visuales, elementos simbólicos, representación artística de influencia y relevancia`
+      text: `Por qué ${topic} es tan importante`,
+      imagePrompt: `Visualización conceptual del impacto de ${topic}, conexiones visuales, elementos simbólicos, representación artística`
     },
     {
-      text: `Ahora poseen un conocimiento completo y transformador sobre ${topic}. Utilicen esta sabiduría para mejorar sus vidas, tomar mejores decisiones y compartir este valioso aprendizaje con las personas que los rodean.`,
-      imagePrompt: `Imagen inspiradora de conclusión sobre ${topic}, sensación de logro y conocimiento, elementos visuales positivos, colores cálidos y motivadores, composición que inspire acción`
+      text: `Ahora ya conoces todo sobre ${topic}`,
+      imagePrompt: `Imagen inspiradora de conclusión sobre ${topic}, sensación de logro, elementos visuales positivos, colores cálidos`
     }
   ];
 

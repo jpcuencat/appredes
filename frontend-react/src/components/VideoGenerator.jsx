@@ -11,6 +11,7 @@ export default function VideoGenerator({ script, onVideoGenerated }) {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState(null)
   const [videoUrl, setVideoUrl] = useState(null)
+  const [imageGenerationMethod, setImageGenerationMethod] = useState('placeholder')
 
   useEffect(() => {
     if (!jobId) return
@@ -62,11 +63,13 @@ export default function VideoGenerator({ script, onVideoGenerated }) {
           title: script.title,
           scenes: script.scenes
         },
-        settings: script.settings || {
-          videoWidth: 1080,
-          videoHeight: 1920,
-          fps: 30,
-          voice: 'es'
+        settings: {
+          ...(script.settings || {}),
+          videoWidth: script.settings?.videoWidth || 1080,
+          videoHeight: script.settings?.videoHeight || 1920,
+          fps: script.settings?.fps || 30,
+          voice: script.settings?.voice || 'es',
+          imageGenerationMethod: imageGenerationMethod
         }
       })
 
@@ -235,6 +238,109 @@ export default function VideoGenerator({ script, onVideoGenerated }) {
                 >
                   Descargar Video
                 </a>
+              </div>
+            </div>
+          )}
+
+          {!generating && !videoUrl && (
+            <div style={{
+              background: 'var(--bg-main)',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '2rem',
+              border: '1px solid var(--border)'
+            }}>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+                Método de Generación de Imágenes
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  border: `2px solid ${imageGenerationMethod === 'placeholder' ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: imageGenerationMethod === 'placeholder' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  transition: 'all 0.2s'
+                }}>
+                  <input
+                    type="radio"
+                    name="imageMethod"
+                    value="placeholder"
+                    checked={imageGenerationMethod === 'placeholder'}
+                    onChange={(e) => setImageGenerationMethod(e.target.value)}
+                    style={{ marginTop: '0.25rem' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                      🎨 Placeholders Visuales (Gratis)
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Imágenes abstractas con colores y formas geométricas. Rápido y sin costo.
+                    </div>
+                  </div>
+                </label>
+
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  border: `2px solid ${imageGenerationMethod === 'unsplash' ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: imageGenerationMethod === 'unsplash' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  transition: 'all 0.2s'
+                }}>
+                  <input
+                    type="radio"
+                    name="imageMethod"
+                    value="unsplash"
+                    checked={imageGenerationMethod === 'unsplash'}
+                    onChange={(e) => setImageGenerationMethod(e.target.value)}
+                    style={{ marginTop: '0.25rem' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                      📸 Unsplash (Gratis)
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Fotografías de stock de alta calidad. Gratis pero resultados impredecibles.
+                    </div>
+                  </div>
+                </label>
+
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  border: `2px solid ${imageGenerationMethod === 'dalle' ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: imageGenerationMethod === 'dalle' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  transition: 'all 0.2s'
+                }}>
+                  <input
+                    type="radio"
+                    name="imageMethod"
+                    value="dalle"
+                    checked={imageGenerationMethod === 'dalle'}
+                    onChange={(e) => setImageGenerationMethod(e.target.value)}
+                    style={{ marginTop: '0.25rem' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                      🤖 DALL-E 3 (Con costo)
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Imágenes generadas con IA basadas en tus descripciones. ~$0.04 USD por imagen.
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>
           )}
